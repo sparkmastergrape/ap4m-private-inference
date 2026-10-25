@@ -1,0 +1,51 @@
+{
+  "service": "merchant",
+  "about": "The AP4M inference merchant this package builds (127.0.0.1:4308). Examples captured from a live response on 2026-10-25.",
+  "endpoints": {
+    "GET /healthz": {
+      "response": { "type": "object", "required": ["status"], "properties": { "status": { "type": "string" }, "jobs": { "type": "integer" } }, "example": { "status": "ok", "jobs": 5, "queued": 0 } }
+    },
+    "POST /jobs": {
+      "note": "Free. Stages the MASKED request and returns the price. Signs nothing.",
+      "request": {
+        "type": "object",
+        "required": ["channelId", "request"],
+        "properties": { "channelId": { "type": "string" }, "request": { "type": "object" }, "maskedFields": { "type": "integer" }, "maxTokens": { "type": "integer" }, "model": { "type": "string" } },
+        "example": { "channelId": "0xba86e45959af3fb932f551c62f43542b3fd80a2f99d45ceca4386920d0363dd0", "request": { "model": "chainaim/auto", "max_tokens": 50, "messages": [{ "role": "user", "content": "hi" }] }, "maxTokens": 50 }
+      },
+      "response": {
+        "type": "object",
+        "required": ["jobId", "channelId", "amount", "maximumAmount", "rlusd", "breakdown", "expiresAt", "headers"],
+        "properties": {
+          "jobId": { "type": "string" },
+          "channelId": { "type": "string" },
+          "amount": { "type": "string" },
+          "maximumAmount": { "type": "string" },
+          "rlusd": { "type": "string" },
+          "model": { "type": "string" },
+          "breakdown": { "type": "object" },
+          "expiresAt": { "type": "integer" },
+          "resourceUrl": { "type": "string" },
+          "headers": { "type": "object" }
+        },
+        "example": {
+          "jobId": "2ec4efee-cd67-446e-b907-9b18037764d3",
+          "channelId": "0xba86e45959af3fb932f551c62f43542b3fd80a2f99d45ceca4386920d0363dd0",
+          "amount": "100031000000000000",
+          "maximumAmount": "100031000000000000",
+          "rlusd": "0.100031",
+          "model": "nemotron-nano-3-30b",
+          "breakdown": { "inTok": 25, "outTok": 50, "inTokSource": "bytes", "totalRlusd": "0.100031", "quoteWei": "100031000000000000" },
+          "expiresAt": 1792919167,
+          "resourceUrl": "http://127.0.0.1:4308/resource",
+          "headers": { "X-AP4M-CHANNEL-ID": "0xba86e45959af3fb932f551c62f43542b3fd80a2f99d45ceca4386920d0363dd0", "X-CHAINAIM-JOB": "2ec4efee-cd67-446e-b907-9b18037764d3" }
+        }
+      }
+    },
+    "GET /quote/{jobId}": { "note": "Free. What a staged job costs and whether it is still buyable. 404 no_such_job for an unknown id." },
+    "GET /resource": {
+      "note": "x402. Send X-AP4M-CHANNEL-ID and X-CHAINAIM-JOB. Without PAYMENT-SIGNATURE: 402 with PAYMENT-REQUIRED. With it: the merchant infers, redeems on chain, then releases the answer with PAYMENT-RESPONSE. 502 inference_failed means nothing was redeemed.",
+      "statuses": ["200", "402", "400 job_required", "404 no_such_job", "409 job_expired", "409 job_already_paid", "409 channel_cap_exceeded", "409 merchant_acceptance_closed", "502 inference_failed", "503 chain_head_stale"]
+    }
+  }
+}

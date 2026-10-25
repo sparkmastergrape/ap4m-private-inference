@@ -1,0 +1,67 @@
+{
+  "service": "client-privacy",
+  "about": "Loopback only (127.0.0.1:8787). Copied from the running service on 2026-10-25, not imported: hack/ap4m reaches it by HTTP. Every example below was captured from a live response.",
+  "endpoints": {
+    "GET /healthz": {
+      "response": {
+        "type": "object",
+        "required": ["ok", "service"],
+        "properties": { "ok": { "type": "boolean" }, "service": { "type": "string" }, "documentTypes": { "type": "array" } },
+        "example": { "ok": true, "service": "client-privacy", "names": true, "cardRemoved": "[CARD REMOVED]", "documentTypes": ["txt", "md", "pdf", "docx", "xlsx", "csv"] }
+      }
+    },
+    "POST /extract": {
+      "note": "Reads a file from this computer's disk. Forward slashes or escaped backslashes in the path.",
+      "request": { "type": "object", "required": ["file"], "properties": { "file": { "type": "string" }, "types": { "type": "string" } }, "example": { "file": "C:/docs/clinic-patients.csv" } },
+      "response": {
+        "type": "object",
+        "required": ["type", "text"],
+        "properties": { "type": { "type": "string" }, "text": { "type": "string" }, "warnings": { "type": "array" } },
+        "example": { "type": "csv", "text": "Patient Name: Ravi Kumar ...", "warnings": [] }
+      }
+    },
+    "POST /mask": {
+      "note": "The map is returned to the caller and kept nowhere in the service. NEVER send it onward.",
+      "request": { "type": "object", "required": ["text"], "properties": { "text": { "type": "string" }, "names": { "type": "boolean" } }, "example": { "text": "Patient Name: Ravi Kumar phone 98765 43210" } },
+      "response": {
+        "type": "object",
+        "required": ["masked", "map", "counts", "cardsRemoved"],
+        "properties": { "masked": { "type": "string" }, "map": { "type": "object" }, "counts": { "type": "object" }, "cardsRemoved": { "type": "integer" } },
+        "example": {
+          "masked": "Patient Name: <C_PERSON_1> phone <C_PHONE_NUMBER_1>",
+          "map": { "<C_PERSON_1>": "Ravi Kumar", "<C_PHONE_NUMBER_1>": "98765 43210" },
+          "counts": { "PERSON": 1, "PHONE_NUMBER": 1 },
+          "cardsRemoved": 0
+        }
+      }
+    },
+    "POST /scan": {
+      "note": "Offsets and types only. Values are never returned.",
+      "request": { "type": "object", "required": ["text"], "properties": { "text": { "type": "string" } }, "example": { "text": "Patient Name: Ravi Kumar" } },
+      "response": {
+        "type": "object",
+        "required": ["found", "counts", "total"],
+        "properties": { "found": { "type": "array" }, "counts": { "type": "object" }, "total": { "type": "integer" } },
+        "example": { "found": [{ "type": "PERSON", "start": 14, "end": 24 }], "counts": { "PERSON": 1 }, "total": 1 }
+      }
+    },
+    "POST /restore": {
+      "request": {
+        "type": "object",
+        "required": ["text", "map"],
+        "properties": { "text": { "type": "string" }, "map": { "type": "object" } },
+        "example": { "text": "hi <C_PERSON_1>", "map": { "<C_PERSON_1>": "Ravi" } }
+      },
+      "response": {
+        "type": "object",
+        "required": ["text", "unresolved"],
+        "properties": { "text": { "type": "string" }, "unresolved": { "type": "integer" } },
+        "example": { "text": "hi Ravi", "unresolved": 0 }
+      }
+    }
+  },
+  "errors": {
+    "400": { "type": "object", "required": ["error", "detail"], "properties": { "error": { "type": "string" }, "detail": { "type": "string" } }, "example": { "error": "bad_request", "detail": "\"text\" must be a string" } },
+    "422": "document_refused: the file type or path is not readable"
+  }
+}

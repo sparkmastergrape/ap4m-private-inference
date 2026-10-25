@@ -100,7 +100,8 @@ async function main(): Promise<void> {
 
   if (want("status")) {
     banner(1, "status: agent, Channel, cap, redeemed");
-    run("src/ops/status.ts", envFiles);
+    const code = run("src/ops/status.ts", envFiles);
+    if (code !== 0) process.exitCode = code;
   }
 
   if (want("ask")) {
@@ -140,7 +141,12 @@ async function main(): Promise<void> {
 
   if (want("settle")) {
     banner(5, "settle: move the RLUSD and get the receipt");
-    run("src/ops/settle.ts", [...envFiles, "--channel-id", need("channel-id"), "--ledger-dir", values["ledger-dir"]!, "--confirm"]);
+    const code = run("src/ops/settle.ts", [...envFiles, "--channel-id", need("channel-id"), "--ledger-dir", values["ledger-dir"]!, "--confirm"]);
+    if (code !== 0) {
+      console.log("
+SETTLE FAILED. The service also settles on its own; re-run: --step settle");
+      process.exitCode = code;
+    }
   }
 
   if (want("ledger")) {

@@ -9,13 +9,19 @@ Everything here is new code written for the event; nothing in `services/` was ch
 
 ## What pre-existed, and what was built here
 
-| Pre-existing (not ours to claim) | Built in `hack/ap4m` |
+| Pre-existing (not ours to claim) | Built in `hack/ap4m` (all of it new) |
 |---|---|
-| `services/gateway` — masking, routing, decision ledger | the AP4M merchant (402 → verify → infer → redeem → release) |
-| `services/presidio` — entity detection | the per-job quote (`src/shared/estimate.ts`) |
-| `packages/route-engine` — rules classifier (MIT fork) | the agent-side AP4M rail around `buyResource` |
-| the Strands + Bedrock agent loop | channel ops: setup, status, settle, receipt |
-| the XRPL L1 / t54 paywall (dormant here) | the import boundary check |
+| `services/gateway` — masking, routing, decision ledger | the AP4M merchant: per-job quote, 402 → verify → infer → redeem → release, finality wait (`src/merchant/`) |
+| `services/presidio` — entity detection | the per-job price, identical on agent and merchant (`src/shared/estimate.ts`) |
+| `packages/route-engine` — rules classifier (MIT fork) | the agent rail: local price and session limits that refuse **before signing** (`src/agent/rail.ts`) |
+| the Strands + Bedrock agent in `services/paywall` (the L1 rail) | `purchase.ts`: the kit's `buyResource` rebuilt on SDK primitives, because the kit helper cannot run on Windows |
+| the XRPL L1 / t54 paywall (dormant here) | channel ops: `status`, `setup-channel`, `settle` (receipt URL per claim), `ledger-view` |
+| the AP4M kit: `vendor/` SDK files, `@ap4m/sdk`, the hosted service | the payment ledger, one line per claim, no text (`src/shared/ledger.ts`) |
+| `services/client-privacy` wraps the existing masking code | the demo script (`demo/demo.ts`) and the API contracts (`contracts/`) |
+
+`services/client-privacy` is a thin loopback wrapper added for this event around masking code that
+already existed. An optional Strands tool (`--agent`) is written but has **not** been run end to
+end; the demo uses the direct path.
 
 ## The boundary
 
@@ -46,7 +52,10 @@ testnet RLUSD. `npm test` runs the unit tests and the boundary check.
 
 ## Status
 
-Steps 1 to 8 are built. Not done: wiring `src/agent/tool.ts` into the Strands agent.
+Build steps 1 to 8 are done. Live on XRPL EVM Testnet: masked ask, payment, redemption, answer from
+a hosted model, restore on the PC, settlement and receipt. Not done: the `--agent` Strands path has
+not run (Bedrock access was denied). Known limit: the input-token estimate counts bytes and ran
+about 90 tokens low in one measured ask, so the quote is not yet a strict ceiling.
 
 ## Pricing
 

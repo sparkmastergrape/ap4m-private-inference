@@ -1,0 +1,22 @@
+{
+  "service": "gateway",
+  "about": "Only what the merchant uses of services/gateway (127.0.0.1:8720 in the local container). Read from src/merchant/gateway-client.ts.",
+  "endpoints": {
+    "GET /healthz": { "note": "Unauthenticated. Reports the privacy scanner." },
+    "POST /v1/chat/completions": {
+      "note": "Authorization: Bearer <gateway key>. The decision id comes back in the x-chainaim-decision-id response header.",
+      "request": {
+        "type": "object",
+        "required": ["messages"],
+        "properties": { "model": { "type": "string" }, "max_tokens": { "type": "integer" }, "messages": { "type": "array" } },
+        "example": { "model": "chainaim/auto", "max_tokens": 300, "messages": [{ "role": "user", "content": "Which visits are in November?\n\nDocuments:\n<C_PERSON_1> ..." }] }
+      },
+      "response": {
+        "type": "object",
+        "required": ["choices"],
+        "properties": { "choices": { "type": "array" }, "model": { "type": "string" }, "usage": { "type": "object" } },
+        "example": { "model": "cohere/north-mini-code:free", "choices": [{ "message": { "role": "assistant", "content": "<C_PERSON_1> ..." } }], "usage": { "prompt_tokens": 319, "completion_tokens": 235, "total_tokens": 554 } }
+      }
+    }
+  }
+}
