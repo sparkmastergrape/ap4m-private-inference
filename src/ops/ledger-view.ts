@@ -18,11 +18,14 @@ import { parseArgs } from "node:util";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { ethers } from "ethers";
+import { DEFAULT_API_URL, NAMES, env, explorerTx, loadEnvFile, publicConfig, rpcUrl } from "../shared/config.ts";
 import { assertNoText, type RedemptionEntry, type SettlementEntry } from "../shared/ledger.ts";
 
 const { values } = parseArgs({
   options: {
     "ledger-dir": { type: "string", default: ".ap4m-ledger" },
+    "env-file": { type: "string", multiple: true },
+    "api-url": { type: "string" },
     "channel-id": { type: "string" },
     forbid: { type: "string" },
     json: { type: "boolean", default: false },
@@ -32,7 +35,34 @@ const { values } = parseArgs({
 const short = (id?: string): string => (id && id.length > 14 ? `${id.slice(0, 8)}…${id.slice(-4)}` : (id ?? "-"));
 const rlusd = (wei: string): string => ethers.formatUnits(BigInt(wei), 18);
 
-function main(): void {
+const TRANSFER = ethers.id("Transfer(address,address,uint256)");
+
+/**
+ * Look for the payout itself: an RLUSD Transfer to the seller of exactly this
+ * claim's amount, in the blocks after the redemption. The service pays out on
+ * its own, so a missing settlement LINE does not mean a missing payout: the
+ * chain is the evidence, not this ledger.
+ */
+async function findPayout(
+  provider: ethers.JsonRpcProvider,
+  token: string,
+  seller: string,
+  entry: RedemptionEntry,
+): Promise<{ block: number; tx: string } | undefined> {
+  const receipt = await provider.getTransactionReceipt(entry.redeemTx);
+  if (!receipt) return undefined;
+  const head = await provider.getBlockNumber();
+  const logs = await provider.getLogs({
+    address: token,
+    topics: [TRANSFER, null, ethers.zeroPadValue(seller, 32)],
+    fromBlock: receipt.blockNumber,
+    toBlock: Math.min(head, receipt.blockNumber + 40),
+  });
+  const hit = logs.find((l) => BigInt(l.data) === BigInt(entry.amountWei));
+  return hit ? { block: hit.blockNumber, tx: hit.transactionHash } : undefined;
+}
+
+async function main(): Promise<void> {
   const dir = resolve(values["ledger-dir"]!);
   if (!existsSync(dir)) {
     console.error(`no ledger at ${dir}`);
@@ -58,6 +88,19 @@ function main(): void {
     }
   }
 
+  let chain: { provider: ethers.JsonRpcProvider; token: string; seller: string; explorer: (h: string) => string } | undefined;
+  if (values["env-file"]?.length) {
+    for (const file of values["env-file"]) loadEnvFile(file);
+    const apiUrl = (values["api-url"] || env(NAMES.apiUrl, "AP4M API URL", false) || DEFAULT_API_URL).replace(/\/+$/, "");
+    const config = await publicConfig(apiUrl);
+    chain = {
+      provider: new ethers.JsonRpcProvider(rpcUrl(config), undefined, { staticNetwork: true }),
+      token: config.contracts.rlusdToken,
+      seller: env(["MERCHANT_PAYOUT_ADDRESS", "MERCHANT_PAYOUT"], "merchant payout address"),
+      explorer: (h) => explorerTx(config, h),
+    };
+  }
+
   const rows = [...redemptions.values()].sort((a, b) => a.ts.localeCompare(b.ts));
   if (values.json) {
     console.log(JSON.stringify(rows.map((r) => ({ redemption: r, settlement: settlements.get(r.claimId) ?? null })), null, 2));
@@ -71,7 +114,16 @@ function main(): void {
       console.log(`  model       ${r.model ?? "-"}   decision ${short(r.decisionId)}`);
       console.log(`  tokens      quoted ≤${quotedTok}   actual ${r.actual?.totalTokens ?? "-"}`);
       console.log(`  redeem tx   ${short(r.redeemTx)}`);
-      console.log(`  settled     ${s ? `yes   receipt ${s.receiptUrl ?? "none yet"}` : "not recorded (run ops/settle.ts)"}\n`);
+      let settled = s ? `yes   receipt ${s.receiptUrl ?? "none yet"}` : "";
+      if (!s) {
+        const payout = chain ? await findPayout(chain.provider, chain.token, chain.seller, r).catch(() => undefined) : undefined;
+        settled = payout
+          ? `yes, on chain: payout in block ${payout.block}  ${chain!.explorer(payout.tx)}`
+          : chain
+            ? "no payout found within 40 blocks of the redeem"
+            : "no settlement line (pass --env-file to check the chain)";
+      }
+      console.log(`  settled     ${settled}\n`);
     }
   }
 
@@ -85,4 +137,7 @@ function main(): void {
   }
 }
 
-main();
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : error);
+  process.exit(1);
+});

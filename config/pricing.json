@@ -1,12 +1,12 @@
 {
-  "_comment": "Prices only. No model names, no URLs, no keys. See DESIGN/xrplh-18 section 7.",
+  "_comment": "Prices only. No model names, no URLs, no keys. See DESIGN/xrplh-18 section 7. charsPerToken 2: masked text measured 2.14 to 2.73 bytes per token on 5 live asks (2026-10-25), so 2 keeps the quote above actual input.",
   "fixed": 0.1,
   "perMaskedField": 0.0005,
   "perKB": 0.0002,
   "costShare": 1,
   "minimum": 0.01,
   "maximumPerCall": 0.5,
-  "charsPerToken": 4,
+  "charsPerToken": 2,
   "inputMargin": 0.15,
   "reasoningFactor": 0
 }

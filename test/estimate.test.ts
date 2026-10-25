@@ -42,9 +42,15 @@ test("the wei amount is exact, with no floating point drift", () => {
 
 test("counting by size applies charsPerToken and inputMargin", () => {
   const { inTok, source } = countInputTokens(work({ bytes: 8000 }), pricing);
-  // ceil(8000 / 4 * 1.15) = 2300
-  assert.equal(inTok, 2300);
+  assert.equal(inTok, Math.ceil((8000 / pricing.charsPerToken) * (1 + pricing.inputMargin)));
   assert.equal(source, "bytes");
+});
+
+test("the size estimate stays above what live asks measured", () => {
+  // Masked text ran 2.14 to 2.73 bytes per actual input token on 5 live asks
+  // (2026-10-25). If bytes-per-token assumed here exceeds 2.14, the quote can
+  // fall below the tokens actually used, and it stops being a ceiling.
+  assert.ok(pricing.charsPerToken / (1 + pricing.inputMargin) <= 2.14, "charsPerToken is too high for masked text");
 });
 
 test("an exact count wins over counting by size", () => {

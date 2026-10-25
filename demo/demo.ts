@@ -151,7 +151,7 @@ async function main(): Promise<void> {
   if (want("ledger")) {
     banner(6, "ledger: agent, channel, claim, model; no personal data");
     const code = run("src/ops/ledger-view.ts", [
-      "--ledger-dir", values["ledger-dir"]!, "--channel-id", need("channel-id"),
+      ...envFiles, "--ledger-dir", values["ledger-dir"]!, "--channel-id", need("channel-id"),
       ...(values.forbid ? ["--forbid", values.forbid] : []),
     ]);
     if (code !== 0) process.exitCode = code;

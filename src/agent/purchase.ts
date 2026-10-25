@@ -217,6 +217,9 @@ export async function buyResource(input: PurchaseInput): Promise<Purchase> {
       throw new Error("merchant challenge exceeds the configured purchase authority");
     }
     await requireCanonicalBlock(provider as never, safe.number, safe.hash);
+    console.log(
+      `402 Payment Required: merchant asks ${(Number(BigInt(accepted.amount) / 10n ** 12n) / 1e6).toFixed(6)} RLUSD to ${accepted.payTo} (within this agent's limit)`,
+    );
     // This is the only signature: a gasless EIP-712 Voucher.
     const payload = await buildX402PaymentPayload({ paymentRequired: required as never, channelId, signer: input.wallet as never });
     retained = {

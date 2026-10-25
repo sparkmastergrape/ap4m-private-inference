@@ -50,12 +50,19 @@ node demo/demo.ts --env-file <env> --channel-id 0x... --document <csv> --step st
 `overcap` is free: both refusals happen before anything is signed. `ask` and `settle` move
 testnet RLUSD. `npm test` runs the unit tests and the boundary check.
 
+The ledger viewer checks the payout on chain when you pass the env file:
+`node src/ops/ledger-view.ts --env-file <env> --channel-id 0x...`.
+
+**If you cloned only this folder** (for example `sparkmastergrape/ap4m-private-inference`): the
+merchant needs client-privacy and the gateway running next to it, and you need your own `.env` with
+the Agent key, Merchant key and `MERCHANT_PAYOUT_ADDRESS`. Optional: `AP4M_RPC_URL` for a private RPC.
+
 ## Status
 
 Build steps 1 to 8 are done. Live on XRPL EVM Testnet: masked ask, payment, redemption, answer from
 a hosted model, restore on the PC, settlement and receipt. Not done: the `--agent` Strands path has
-not run (Bedrock access was denied). Known limit: the input-token estimate counts bytes and ran
-about 90 tokens low in one measured ask, so the quote is not yet a strict ceiling.
+not run (Bedrock access was denied). The input-token estimate now assumes 2 bytes per token
+(measured 2.14 to 2.73 on 5 asks), so the quote stays above the tokens used.
 
 ## Pricing
 
