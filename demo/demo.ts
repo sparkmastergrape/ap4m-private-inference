@@ -143,8 +143,7 @@ async function main(): Promise<void> {
     banner(5, "settle: move the RLUSD and get the receipt");
     const code = run("src/ops/settle.ts", [...envFiles, "--channel-id", need("channel-id"), "--ledger-dir", values["ledger-dir"]!, "--confirm"]);
     if (code !== 0) {
-      console.log("
-SETTLE FAILED. The service also settles on its own; re-run: --step settle");
+      console.log("\nSETTLE FAILED. The service also settles on its own; re-run: --step settle");
       process.exitCode = code;
     }
   }
