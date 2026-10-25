@@ -1,0 +1,11 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.agent-state*/
+.merchant-state/
+.merchant-stub-state/
+.ap4m-merchant-state/
+.ap4m-ledger/
+*.log
+rehearsal*.txt
