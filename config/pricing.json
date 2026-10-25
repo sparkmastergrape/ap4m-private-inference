@@ -1,0 +1,12 @@
+{
+  "_comment": "Prices only. No model names, no URLs, no keys. See DESIGN/xrplh-18 section 7.",
+  "fixed": 0.1,
+  "perMaskedField": 0.0005,
+  "perKB": 0.0002,
+  "costShare": 1,
+  "minimum": 0.01,
+  "maximumPerCall": 0.5,
+  "charsPerToken": 4,
+  "inputMargin": 0.15,
+  "reasoningFactor": 0
+}

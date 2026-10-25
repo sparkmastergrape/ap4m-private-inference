@@ -1,0 +1,21 @@
+{
+  "name": "@chainaim/ap4m-hack",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AP4M (Mastercard) paid private inference on the XRPL EVM sidechain: merchant, agent and ops. Reaches services/* by HTTP only.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "test": "node scripts/check-boundaries.mjs && node --test \"test/*.test.ts\"",
+    "test:unit": "node --test \"test/*.test.ts\"",
+    "check:boundaries": "node scripts/check-boundaries.mjs"
+  },
+  "dependencies": {
+    "@ap4m/sdk": "https://hackathon.ap4m.build/sdk/ap4m-sdk.tgz",
+    "@strands-agents/sdk": "1.20.0",
+    "ethers": "^6.17.0",
+    "zod": "4.6.7"
+  }
+}
